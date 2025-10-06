@@ -21,6 +21,7 @@ import java.time.Duration;
  *     .setMaxPoolSize(20)
  *     .build();
  *     server.start();
+ * </pre>
  */
 
 public class ServerBuilder {

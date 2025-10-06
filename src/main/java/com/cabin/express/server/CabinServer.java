@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.LongAdder;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -56,8 +57,8 @@ public class CabinServer {
     private volatile boolean isRunning = false;
     private volatile boolean isStopped = false;
     private volatile boolean isShuttingDown = false;
-    private final AtomicInteger activeConnections = new AtomicInteger(0);
-    private final AtomicInteger activeRequests = new AtomicInteger(0);
+    private final LongAdder activeConnections = new LongAdder();
+    private final LongAdder activeRequests = new LongAdder();
 
     // Constructor
     protected CabinServer(
@@ -261,7 +262,7 @@ public class CabinServer {
                             clientChannel.configureBlocking(false);
 
                             // Track new connections
-                            activeConnections.incrementAndGet();
+                            activeConnections.increment();
 
                             // Find an available worker selector
                             Selector targetSelector = findAvailableWorkerSelector();
@@ -464,7 +465,7 @@ public class CabinServer {
      * Processes an HTTP request (parsing headers/body, invoking router)
      **/
     private void processHttpRequest(SocketChannel clientChannel, ClientContext context) {
-        activeRequests.incrementAndGet();
+        activeRequests.increment();
         try {
             byte[] requestData = context.requestBuffer.toByteArray();
             Request request = new Request(requestData);
@@ -511,7 +512,7 @@ public class CabinServer {
             GlobalExceptionHandler.handleException(t, new Response(clientChannel));
             sendInternalServerError(clientChannel, workerSelectors[nextWorkerIndex.get()]);
         } finally {
-            activeRequests.decrementAndGet();
+            activeRequests.decrement();
         }
     }
 
@@ -671,7 +672,7 @@ public class CabinServer {
         closeServerSocketChannel();
 
         CabinLogger.info("Server stopped accepting new connections. Active connections: " +
-                activeConnections.get() + ", Active requests: " + activeRequests.get());
+                activeConnections.sum() + ", Active requests: " + activeRequests.sum());
 
         // Phase 2: Wait for active requests to complete
         long gracefulShutdownTimeout = Math.min(timeoutMillis / 2, 30000); // Max 30 seconds for graceful
@@ -703,8 +704,8 @@ public class CabinServer {
         }
 
         CabinLogger.info("Server shutdown completed. Final state - stopped: " + isStopped +
-                ", active connections: " + activeConnections.get() +
-                ", active requests: " + activeRequests.get());
+                ", active connections: " + activeConnections.sum() +
+                ", active requests: " + activeRequests.sum());
 
         return isStopped;
     }
@@ -780,8 +781,8 @@ public class CabinServer {
         CabinLogger.info("Waiting for active requests to complete...");
 
         while (System.currentTimeMillis() < deadline) {
-            int activeReqs = activeRequests.get();
-            int activeConns = activeConnections.get();
+            long activeReqs = activeRequests.sum();
+            long activeConns = activeConnections.sum();
 
             // Check if all requests are completed
             if (activeReqs == 0) {
@@ -807,7 +808,7 @@ public class CabinServer {
         }
 
         CabinLogger.warn("Timeout waiting for active requests to complete. " +
-                "Active requests: " + activeRequests.get());
+                "Active requests: " + activeRequests.sum());
         return false;
     }
 }

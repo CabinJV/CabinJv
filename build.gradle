@@ -1,41 +1,79 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'signing'
     id 'org.jetbrains.kotlin.jvm'
 }
 
 group = 'com.cabin.express'
-version = 'v26.0.0'
+version = '26.0.0' // remove "v" prefix, Maven Central prefers semantic version numbers
 
-publishing {
-    repositories {
-        maven {
-            name = "cabinjv"
-            url = uri("https://maven.pkg.github.com/sangqle/cabinjv")
-            credentials {
-                username = project.findProperty("gpr.user") ?: System.getenv("USERNAME")
-                password = project.findProperty("gpr.key") ?: System.getenv("TOKEN")
-            }
-        }
-    }
-    publications {
-        gpr(MavenPublication) {
-            from(components.java)
-        }
-    }
+java {
+    withJavadocJar()
+    withSourcesJar()
 }
 
 repositories {
     mavenCentral()
 }
 
-ext {
-    libDirName = 'lib'
-    mainClassName = project.hasProperty("mainClass") ? project.getProperty("mainClass") : ' examples.sample.HServer'
-    gradleVersion = gradleVersion = gradle.gradleVersion
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            groupId = 'com.cabin.express'
+            artifactId = 'cabinj'
+            version = '26.0.0'
+
+            pom {
+                name.set("CabinJv")
+                description.set("CabinJv is a light weight web framework for Java")
+                url.set("https://github.com/CabinJV/CabinJv")
+
+                licenses {
+                    license {
+                        name.set("The Apache License, Version 2.0")
+                        url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+                    }
+                }
+
+                developers {
+                    developer {
+                        id.set("cabin")
+                        name.set("Sang Le")
+                        email.set("sang.sevn@gmail.com")
+                    }
+                }
+
+                scm {
+                    connection.set("scm:git:https://github.com/CabinJV/CabinJv.git")
+                    developerConnection.set("scm:git:ssh://github.com/CabinJV/CabinJv.git")
+                    url.set("https://github.com/CabinJV/CabinJv")
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "OSSRH"
+            url = uri(
+                    version.endsWith("SNAPSHOT")
+                            ? "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+                            : "https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/"
+            )
+
+            credentials {
+                username = project.findProperty("ossrhUsername") ?: System.getenv("OSSRH_USERNAME")
+                password = project.findProperty("ossrhPassword") ?: System.getenv("OSSRH_PASSWORD")
+            }
+        }
+    }
 }
 
-java {
+signing {
+    sign publishing.publications.mavenJava
 }
 
 dependencies {
@@ -43,30 +81,18 @@ dependencies {
     implementation 'ch.qos.logback:logback-classic:1.4.5'
     implementation 'org.slf4j:slf4j-api:2.0.9'
 
-    // http
     implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.4'
     implementation 'org.apache.httpcomponents.core5:httpcore5:5.3.4'
 
-    // Tests dependencies
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
     testImplementation 'org.assertj:assertj-core:3.27.3'
-    testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.mockito:mockito-core:5.4.0'
-    testImplementation("org.mockito:mockito-junit-jupiter:5.14.2")
+    testImplementation 'org.mockito:mockito-junit-jupiter:5.14.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 }
 
 test {
     useJUnitPlatform()
-    testLogging {
-        events "passed", "skipped", "failed"
-        showStandardStreams = true
-    }
-    afterSuite { desc, result ->
-        if (!desc.parent) {
-            println "\nTest results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} passed, ${result.failedTestCount} failed, ${result.skippedTestCount} skipped)"
-        }
-    }
 }
 
 task copyDependencies(type: Copy) {
@@ -76,21 +102,15 @@ task copyDependencies(type: Copy) {
 
 jar {
     dependsOn copyDependencies
-}
-
-jar {
     manifest {
         attributes(
-                'Gradle-Version': gradle.gradleVersion, // Fix to reference the Gradle version
+                'Gradle-Version': gradle.gradleVersion,
                 'Created-By': System.getProperty("java.version") + " (Java)",
-                'Class-Path': configurations.runtimeClasspath.files.collect {
-                    "libs/" + it.name // Adjusting the path prefix to match the final layout
-                }.join(' '),
-                'Main-Class': mainClassName // Ensure `mainClassName` is set in your Gradle file
+                'Class-Path': configurations.runtimeClasspath.files.collect { "libs/" + it.name }.join(' '),
+                'Main-Class': 'examples.sample.HServer'
         )
     }
     archiveBaseName.set('cabin')
-
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     from {
