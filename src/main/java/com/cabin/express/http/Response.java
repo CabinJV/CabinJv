@@ -226,7 +226,6 @@ public class Response {
      * Write specified object as JSON to the response body.
      *
      * @param content content content content content content content content
-     * @return
      */
     public void send(Object content) {
         try {
