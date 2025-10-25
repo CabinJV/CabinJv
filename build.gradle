@@ -5,7 +5,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
 }
 
-group = 'com.cabin.express'
+group = 'com.cabinj'
 version = '26.0.0' // remove "v" prefix, Maven Central prefers semantic version numbers
 
 java {
@@ -22,7 +22,7 @@ publishing {
         mavenJava(MavenPublication) {
             from components.java
 
-            groupId = 'com.cabin.express'
+            groupId = 'com.cabinj'
             artifactId = 'cabinj'
             version = '26.0.0'
 
@@ -76,6 +76,87 @@ signing {
     sign publishing.publications.mavenJava
 }
 
+// Custom task to generate checksums for Maven Central
+task generateChecksums {
+    dependsOn 'jar', 'javadocJar', 'sourcesJar', 'generatePomFileForMavenJavaPublication'
+    doLast {
+        def artifactsDir = file("$buildDir/libs")
+        def pomFile = file("$buildDir/publications/mavenJava/pom-default.xml")
+        def moduleFile = file("$buildDir/publications/mavenJava/module.json")
+
+        // Function to generate checksums
+        def generateChecksum = { File file, String algorithm ->
+            if (file.exists()) {
+                def digest = java.security.MessageDigest.getInstance(algorithm)
+                file.eachByte(4096) { bytes, size ->
+                    digest.update(bytes, 0, size)
+                }
+                return digest.digest().encodeHex().toString()
+            }
+            return null
+        }
+
+        // Files to generate checksums for
+        def files = []
+        files.add(new File(artifactsDir, "cabinj-${version}.jar"))
+        files.add(new File(artifactsDir, "cabinj-${version}-javadoc.jar"))
+        files.add(new File(artifactsDir, "cabinj-${version}-sources.jar"))
+        files.add(pomFile)
+        if (moduleFile.exists()) files.add(moduleFile)
+
+        files.each { file ->
+            if (file.exists()) {
+                // Generate MD5
+                def md5 = generateChecksum(file, 'MD5')
+                if (md5) new File("${file}.md5").text = md5
+
+                // Generate SHA1
+                def sha1 = generateChecksum(file, 'SHA-1')
+                if (sha1) new File("${file}.sha1").text = sha1
+
+                // Generate SHA256
+                def sha256 = generateChecksum(file, 'SHA-256')
+                if (sha256) new File("${file}.sha256").text = sha256
+
+                // Generate SHA512
+                def sha512 = generateChecksum(file, 'SHA-512')
+                if (sha512) new File("${file}.sha512").text = sha512
+
+                logger.lifecycle("Generated checksums for: ${file.name}")
+
+                // Also generate checksums for .asc files if they exist
+                def ascFile = new File("${file}.asc")
+                if (ascFile.exists()) {
+                    def ascMd5 = generateChecksum(ascFile, 'MD5')
+                    if (ascMd5) new File("${ascFile}.md5").text = ascMd5
+
+                    def ascSha1 = generateChecksum(ascFile, 'SHA-1')
+                    if (ascSha1) new File("${ascFile}.sha1").text = ascSha1
+
+                    def ascSha256 = generateChecksum(ascFile, 'SHA-256')
+                    if (ascSha256) new File("${ascFile}.sha256").text = ascSha256
+
+                    def ascSha512 = generateChecksum(ascFile, 'SHA-512')
+                    if (ascSha512) new File("${ascFile}.sha512").text = ascSha512
+
+                    logger.lifecycle("Generated checksums for: ${ascFile.name}")
+                }
+            }
+        }
+    }
+}
+
+// Make signing depend on checksum generation
+tasks.withType(Sign) {
+    finalizedBy generateChecksums
+}
+
+// Ensure checksums are generated for all artifacts
+tasks.withType(GenerateModuleMetadata).configureEach {
+    enabled = true
+}
+
+
 dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation 'ch.qos.logback:logback-classic:1.4.5'
@@ -100,8 +181,11 @@ task copyDependencies(type: Copy) {
     into "$buildDir/libs/libs"
 }
 
-jar {
+// Create a separate fat JAR task (not published to Maven Central)
+task fatJar(type: Jar) {
     dependsOn copyDependencies
+    archiveClassifier.set('all')
+    archiveBaseName.set('cabinj')
     manifest {
         attributes(
                 'Gradle-Version': gradle.gradleVersion,
@@ -110,10 +194,21 @@ jar {
                 'Main-Class': 'examples.sample.HServer'
         )
     }
-    archiveBaseName.set('cabin')
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 
     from {
         configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
 }
+
+// Standard JAR for Maven Central (dependencies separate)
+jar {
+    archiveBaseName.set('cabinj')
+    manifest {
+        attributes(
+                'Gradle-Version': gradle.gradleVersion,
+                'Created-By': System.getProperty("java.version") + " (Java)"
+        )
+    }
+}
+

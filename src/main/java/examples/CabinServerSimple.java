@@ -1,8 +1,8 @@
 package examples;
 
-import com.cabin.express.router.Router;
-import com.cabin.express.server.CabinServer;
-import com.cabin.express.server.ServerBuilder;
+import com.cabinj.express.router.Router;
+import com.cabinj.express.server.CabinServer;
+import com.cabinj.express.server.ServerBuilder;
 
 import java.io.IOException;
 
