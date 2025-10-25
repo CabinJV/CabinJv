@@ -16,6 +16,29 @@ CabinJ is a lightweight HTTP server framework built with Java NIO. This guide wi
 ## Install CabinJ
 You can include CabinJ in your project using Maven or Gradle.
 
+### From Maven Central (Recommended)
+
+Add the following dependency to your project:
+
+**Maven:**
+```xml
+<dependency>
+    <groupId>com.cabinj</groupId>
+    <artifactId>express</artifactId>
+    <version>26.0.0</version>
+</dependency>
+```
+
+**Gradle (Kotlin DSL):**
+```kotlin
+implementation("com.cabinj:express:26.0.0")
+```
+
+**Gradle (Groovy DSL):**
+```groovy
+implementation 'com.cabinj:express:26.0.0'
+```
+
 ### Using jar File
 
 Download the latest CabinJ jar file from the [releases page](https://github.com/CabinJV/CabinJv/releases), and add it to your project's classpath.
