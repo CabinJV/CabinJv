@@ -1,4 +1,4 @@
-[CabinJV]: src/main/java/com/cabin/express
+CabinJV]: src/main/java/com/cabin/express
 
 # CabinJ Framework
 
@@ -7,6 +7,36 @@
 CabinJ is a high-performance, lightweight HTTP server framework built with Java NIO for efficient non-blocking I/O
 operations. It provides a simple yet powerful API for creating web applications with features like routing, middleware
 support, and efficient request/response handling.
+
+## 📦 Installation
+
+### Maven
+
+Add the following dependency to your `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>com.cabinj</groupId>
+    <artifactId>cabinj</artifactId>
+    <version>26.0.0</version>
+</dependency>
+```
+
+### Gradle
+
+Add the following to your `build.gradle`:
+
+```groovy
+implementation 'com.cabinj:cabinj:26.0.0'
+```
+
+### Gradle (Kotlin DSL)
+
+Add the following to your `build.gradle.kts`:
+
+```kotlin
+implementation("com.cabinj:cabinj:26.0.0")
+```
 
 ## 📦 Releases
 
