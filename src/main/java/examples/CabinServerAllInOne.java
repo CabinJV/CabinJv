@@ -1,10 +1,10 @@
 package examples;
 
-import com.cabin.express.middleware.GzipMiddleware;
-import com.cabin.express.middleware.StaticMiddleware;
-import com.cabin.express.router.Router;
-import com.cabin.express.server.CabinServer;
-import com.cabin.express.server.ServerBuilder;
+import com.cabinj.express.middleware.GzipMiddleware;
+import com.cabinj.express.middleware.StaticMiddleware;
+import com.cabinj.express.router.Router;
+import com.cabinj.express.server.CabinServer;
+import com.cabinj.express.server.ServerBuilder;
 import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

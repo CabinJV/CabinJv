@@ -1,14 +1,14 @@
 package examples;
 
-import com.cabin.express.http.Request;
-import com.cabin.express.http.Response;
-import com.cabin.express.interfaces.Middleware;
-import com.cabin.express.interfaces.ServerLifecycleCallback;
-import com.cabin.express.logger.CabinLogger;
-import com.cabin.express.middleware.MiddlewareChain;
-import com.cabin.express.router.Router;
-import com.cabin.express.server.CabinServer;
-import com.cabin.express.server.ServerBuilder;
+import com.cabinj.express.http.Request;
+import com.cabinj.express.http.Response;
+import com.cabinj.express.interfaces.Middleware;
+import com.cabinj.express.interfaces.ServerLifecycleCallback;
+import com.cabinj.express.logger.CabinLogger;
+import com.cabinj.express.middleware.MiddlewareChain;
+import com.cabinj.express.router.Router;
+import com.cabinj.express.server.CabinServer;
+import com.cabinj.express.server.ServerBuilder;
 
 import java.io.IOException;
 import java.util.List;
